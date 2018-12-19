@@ -48,7 +48,6 @@ def generate_board():
                     board[pos] = King(pos, n("white"))
             else:
                 board[pos] = None
-    print(board)
     return board
 
 
