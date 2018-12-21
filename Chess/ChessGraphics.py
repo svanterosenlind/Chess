@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-from ChessBoard import ChessBoard
+from ChessBoard import *
 
 
 class ChessGraphics:
@@ -86,6 +86,7 @@ if __name__ == "__main__":
     gr = ChessGraphics()
     b = ChessBoard()
     bottom_player = "white"
+    move = "white"  # Whose move it is
     running = True
     while running:
         pressed = False
@@ -98,5 +99,31 @@ if __name__ == "__main__":
         if pressed:
             if gr.selected_square == gr.board_mouse_pos(bottom_player):
                 gr.selected_square = None
+            elif gr.selected_square is not None and b.board[gr.selected_square] is not None:
+                if b.board[tuple(gr.selected_square)].color == move:
+                    legal_moves, legal_captures = b.board[gr.selected_square].legal_moves(b)
+                    print(np.array(gr.board_mouse_pos(bottom_player)))
+                    found = False
+                    for cand in legal_moves:
+                        if gr.board_mouse_pos(bottom_player)[0] == cand[0] \
+                                and gr.board_mouse_pos(bottom_player)[1] == \
+                                cand[1]:
+                            found = True
+                    if found:
+                        b.previous_board = b.board
+                        b.board[gr.board_mouse_pos(bottom_player)] = b.board[gr.selected_square]
+                        b.board[gr.selected_square] = None
+                        move = n(move)
+                    else:
+                        found = False
+                        for cand in legal_captures:
+                            if gr.board_mouse_pos(bottom_player)[0] == cand[0] \
+                                    and gr.board_mouse_pos(bottom_player)[1] == cand[1]:
+                                found = True
+                        if found:
+                            b.previous_board = b.board
+                            b.board[gr.board_mouse_pos(bottom_player)] = b.board[gr.selected_square]
+                            b.board[gr.selected_square] = None
+                            move = n(move)
             else:
                 gr.selected_square = gr.board_mouse_pos(bottom_player)
