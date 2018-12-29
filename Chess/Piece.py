@@ -1,4 +1,5 @@
 import numpy as np
+import ChessBoard
 
 
 class Piece:
@@ -19,34 +20,51 @@ class Pawn(Piece):
         legal_moves = []
         legal_captures = []
         if self.color == "white":
-            if chess_board.board[tuple(self.pos + np.array([0, 1]))] is None: # Move straight forward
+
+            if not ChessBoard.is_p(chess_board, self.pos + np.array([0, 1])):   # Move straight forward
                 legal_moves.append(self.pos + np.array([0, 1]))
-                if self.pos[1] == 1 and chess_board.board[tuple(self.pos + np.array([0, 2]))] is None:
+                if self.pos[1] == 1 and not ChessBoard.is_p(chess_board, self.pos + np.array([0, 2])): # Two steps if it hasn't moved yet
                     legal_moves.append(self.pos + np.array([0, 2]))
 
-            if self.pos[0] != 0 and self.pos[1] != 7 and chess_board.board[tuple(self.pos + np.array([-1, 1]))] is not None: # Capture to the left
-                if chess_board.board[tuple(self.pos + np.array([-1, 1]))].color == "black":
+            if inside(self.pos + np.array([-1, 1])) and \
+                    ChessBoard.is_p(chess_board, self.pos + np.array([-1, 1]), color="black"):
                     legal_captures.append(self.pos + np.array([-1, 1]))
 
-            if self.pos[0] != 7 and self.pos[1] != 7 and chess_board.board[tuple(self.pos + np.array([1, 1]))] is not None: # Capture to the right
-                if chess_board.board[tuple(self.pos + np.array([1, 1]))].color == "black":
+            if inside(self.pos + np.array([1, 1])) and \
+                    ChessBoard.is_p(chess_board, self.pos + np.array([1, 1]), color="black"):
                     legal_captures.append(self.pos + np.array([1, 1]))
 
-        else:
+            if self.pos[1] == 4 and self.pos[0] != 0:       # En passant to the right
+                if ChessBoard.is_p(chess_board, self.pos + np.array([1, 0]), color="black", piece=Pawn) and \
+                        ChessBoard.is_p(chess_board, self.pos + np.array([1, 2]), color="black", piece=Pawn, b="previous"):
+                    legal_captures.append(self.pos + np.array([1, 1]))
+            elif self.pos[1] == 4 and self.pos[0] != 7:       # En passant to the left
+                if ChessBoard.is_p(chess_board, self.pos + np.array([-1, 0]), color="black", piece=Pawn) and \
+                        ChessBoard.is_p(chess_board, self.pos + np.array([-1, 2]), color="black", piece=Pawn, b="previous"):
+                    legal_captures.append(self.pos + np.array([-1, 1]))
+        else:   # self.color == "black"
             if chess_board.board[tuple(self.pos + np.array([0, -1]))] is None:  # Move straight forward
                 legal_moves.append(self.pos + np.array([0, -1]))
                 if self.pos[1] == 6 and chess_board.board[tuple(self.pos + np.array([0, -2]))] is None:
                     legal_moves.append(self.pos + np.array([0, -2]))
 
-            if self.pos[0] != 7 and self.pos[1] != 7 and chess_board.board[
-                tuple(self.pos + np.array([-1, -1]))] is not None:  # Capture to the left
-                if chess_board.board[tuple(self.pos + np.array([-1, -1]))].color == "black":
+            if inside(self.pos + np.array([-1, -1])) and \
+                    chess_board.board[tuple(self.pos + np.array([-1, -1]))] is not None:  # Capture to the left
+                if chess_board.board[tuple(self.pos + np.array([-1, -1]))].color == "white":
                     legal_captures.append(self.pos + np.array([-1, -1]))
 
-            if self.pos[0] != 7 and self.pos[1] != 0 and chess_board.board[
-                tuple(self.pos + np.array([1, -1]))] is not None:  # Capture to the right
-                if chess_board.board[tuple(self.pos + np.array([1, -1]))].color == "black":
+            if inside(self.pos + np.array([1, -1])) and \
+                    chess_board.board[tuple(self.pos + np.array([1, -1]))] is not None:  # Capture to the right
+                if chess_board.board[tuple(self.pos + np.array([1, -1]))].color == "white":
                     legal_captures.append(self.pos + np.array([1, -1]))
+            if self.pos[1] == 3 and self.pos[0] != 0:       # En passant to the right
+                if ChessBoard.is_p(chess_board, self.pos + np.array([1, 0]), color="white", piece=Pawn) and \
+                        ChessBoard.is_p(chess_board, self.pos + np.array([1, -2]), color="white", piece=Pawn, b="previous"):
+                    legal_captures.append(self.pos + np.array([1, -1]))
+            elif self.pos[1] == 3 and self.pos[0] != 7:       # En passant to the left
+                if ChessBoard.is_p(chess_board, self.pos + np.array([-1, 0]), color="white", piece=Pawn) and \
+                        ChessBoard.is_p(chess_board, self.pos + np.array([-1, -2]), color="white", piece=Pawn, b="previous"):
+                    legal_captures.append(self.pos + np.array([-1, -1]))
 
         return legal_moves, legal_captures
 

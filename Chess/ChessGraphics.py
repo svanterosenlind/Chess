@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
-from ChessBoard import *
+import ChessBoard
+import Piece
 
 
 class ChessGraphics:
@@ -58,21 +59,28 @@ class ChessGraphics:
     def draw_moves(self, chessboard, square, bottom_player):
         if chessboard.board[square] is None:
             return
+        elif chessboard.board[square].color != chessboard.player_to_move:
+            return
         moves, captures = chessboard.board[square].legal_moves(chessboard)
-        print(f"moves: {moves}")
-        print(f"captures: {captures}")
         radius = round(self.grid_s / 8)
         if bottom_player == "white":
             for move in moves:
                 x = self.grid_s * move[0] + int(self.grid_s/2)
                 y = self.grid_s * (7-move[1]) + int(self.grid_s/2)
                 pygame.draw.circle(self.scr, self.legal_move_green, (x, y), radius)
+            for cap in captures:
+                x = self.grid_s * cap[0] + int(self.grid_s/2)
+                y = self.grid_s * (7-cap[1]) + int(self.grid_s/2)
+                pygame.draw.circle(self.scr, self.legal_capture_red, (x, y), radius)
         else:
             for move in moves:
                 x = self.grid_s * (7-move[0]) + self.grid_s/2
                 y = self.grid_s * move[1] + self.grid_s/2
                 pygame.draw.circle(self.scr, self.legal_move_green, (x, y), radius)
-
+            for cap in captures:
+                x = self.grid_s * (7 - move[0]) + self.grid_s / 2
+                y = self.grid_s * move[1] + self.grid_s / 2
+                pygame.draw.circle(self.scr, self.legal_capture_red, (x, y), radius)
     def board_mouse_pos(self, bottom_player):
         mouse_pos = np.array(pygame.mouse.get_pos()).astype(int)
         grid_pos = mouse_pos//self.grid_s
@@ -84,9 +92,8 @@ class ChessGraphics:
 
 if __name__ == "__main__":
     gr = ChessGraphics()
-    b = ChessBoard()
+    b = ChessBoard.ChessBoard()
     bottom_player = "white"
-    move = "white"  # Whose move it is
     running = True
     while running:
         pressed = False
@@ -97,33 +104,34 @@ if __name__ == "__main__":
                 pressed = True
         gr.draw_board(b, bottom_player)
         if pressed:
-            if gr.selected_square == gr.board_mouse_pos(bottom_player):
+            if gr.selected_square == gr.board_mouse_pos(bottom_player):     # If you pressed the already selected square
                 gr.selected_square = None
-            elif gr.selected_square is not None and b.board[gr.selected_square] is not None:
-                if b.board[tuple(gr.selected_square)].color == move:
-                    legal_moves, legal_captures = b.board[gr.selected_square].legal_moves(b)
-                    print(np.array(gr.board_mouse_pos(bottom_player)))
+            elif gr.selected_square is not None and b.board[gr.selected_square] is not None \
+                    and b.board[tuple(gr.selected_square)].color == b.player_to_move:      # If you selected a piece of your own color
+                legal_moves, legal_captures = b.board[gr.selected_square].legal_moves(b)
+                found = False
+                for cand in legal_moves:
+                    if gr.board_mouse_pos(bottom_player)[0] == cand[0] \
+                            and gr.board_mouse_pos(bottom_player)[1] == \
+                            cand[1]:
+                        found = True
+                if found:
+                    b.previous_board = b.board
+                    b.board[gr.board_mouse_pos(bottom_player)] = b.board[gr.selected_square]
+                    b.board[gr.board_mouse_pos(bottom_player)].pos = np.array(gr.board_mouse_pos(bottom_player))
+                    b.board[gr.selected_square] = None
+                    b.player_to_move = ChessBoard.n(b.player_to_move)
+                else:
                     found = False
-                    for cand in legal_moves:
+                    for cand in legal_captures:
                         if gr.board_mouse_pos(bottom_player)[0] == cand[0] \
-                                and gr.board_mouse_pos(bottom_player)[1] == \
-                                cand[1]:
+                                and gr.board_mouse_pos(bottom_player)[1] == cand[1]:
                             found = True
                     if found:
                         b.previous_board = b.board
                         b.board[gr.board_mouse_pos(bottom_player)] = b.board[gr.selected_square]
+                        b.board[gr.board_mouse_pos(bottom_player)].pos = np.array(gr.board_mouse_pos(bottom_player))
                         b.board[gr.selected_square] = None
-                        move = n(move)
-                    else:
-                        found = False
-                        for cand in legal_captures:
-                            if gr.board_mouse_pos(bottom_player)[0] == cand[0] \
-                                    and gr.board_mouse_pos(bottom_player)[1] == cand[1]:
-                                found = True
-                        if found:
-                            b.previous_board = b.board
-                            b.board[gr.board_mouse_pos(bottom_player)] = b.board[gr.selected_square]
-                            b.board[gr.selected_square] = None
-                            move = n(move)
+                        b.player_to_move = ChessBoard.n(b.player_to_move)
             else:
                 gr.selected_square = gr.board_mouse_pos(bottom_player)
