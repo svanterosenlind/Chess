@@ -1,15 +1,19 @@
 import numpy as np
 import ChessBoard
+import copy
 
 
 class Piece:
     def __init__(self, pos, color):
         self.pos = pos
         self.color = color
+        self.text = ""
 
     def legal_moves(self, chess_board):
         pass
 
+    def __repr__(self):
+        return self.text + str(self.pos)
 
 class Pawn(Piece):
     def __init__(self, pos, color):
@@ -17,56 +21,75 @@ class Pawn(Piece):
         self.text = "P"
 
     def legal_moves(self, chess_board):
-        legal_moves = []
-        legal_captures = []
+        boards = []
         if self.color == "white":
+            d = 1
+            start = 1
+        else:
+            start = 6
+            d = -1
+        # Move straight forward
+        if inside(self.pos + np.array([0, d])) and not chess_board.is_p(self.pos + np.array([0, d])):
+            # If it will move to a promotion square
+            if not inside(self.pos + np.array([0, 2 * d])):
+                for promotion in [Knight, Bishop, Rook, Queen]:
+                    b = copy.deepcopy(chess_board.board)
+                    b[tuple(self.pos + np.array([0, d]))] = promotion(self.pos + np.array([0, d]), self.color)
+                    b[tuple(self.pos)] = None
+                    boards.append(b)
+            # If it won't move to a promotion square
+            else:
+                b = copy.deepcopy(chess_board.board)
+                b[tuple(self.pos + np.array([0, d]))] = b[tuple(self.pos)]
+                b[tuple(self.pos + np.array([0, d]))].pos = self.pos + np.array([0, d])
+                b[tuple(self.pos)] = None
+                boards.append(b)
 
-            if not ChessBoard.is_p(chess_board, self.pos + np.array([0, 1])):   # Move straight forward
-                legal_moves.append(self.pos + np.array([0, 1]))
-                if self.pos[1] == 1 and not ChessBoard.is_p(chess_board, self.pos + np.array([0, 2])): # Two steps if it hasn't moved yet
-                    legal_moves.append(self.pos + np.array([0, 2]))
+            # Move two steps forward
+            if self.pos[1] == start and not chess_board.is_p(self.pos + np.array([0, 2 * d])):
+                b = copy.deepcopy(chess_board.board)
+                b[tuple(self.pos + np.array([0, 2 * d]))] = b[tuple(self.pos)]
+                b[tuple(self.pos + np.array([0, 2 * d]))].pos = self.pos + np.array([0, 2 * d])
+                b[tuple(self.pos)] = None
+                boards.append(b)
 
-            if inside(self.pos + np.array([-1, 1])) and \
-                    ChessBoard.is_p(chess_board, self.pos + np.array([-1, 1]), color="black"):
-                    legal_captures.append(self.pos + np.array([-1, 1]))
+        # Regular captures in both directions
+        for xdir in [-1, 1]:
+            if inside(self.pos + np.array([xdir, d])) and \
+                    chess_board.is_p(self.pos + np.array([xdir, d]), color=ChessBoard.n(self.color)):
+                # If it will move to a promotion square with the capture
+                if not inside(self.pos + np.array([0, 2 * d])):
+                    for promotion in [Knight, Bishop, Rook, Queen]:
+                        b = copy.deepcopy(chess_board.board)
+                        b[tuple(self.pos + np.array([xdir, d]))] = promotion(self.pos + np.array([xdir, d]), self.color)
+                        b[tuple(self.pos)] = None
+                        boards.append(b)
+                # If it won't move to a promotion square with its capture
+                else:
+                    b = copy.deepcopy(chess_board.board)
+                    b[tuple(self.pos + np.array([xdir, d]))] = b[tuple(self.pos)]
+                    b[tuple(self.pos + np.array([xdir, d]))].pos = self.pos + np.array([xdir, d])
+                    b[tuple(self.pos)] = None
+                    boards.append(b)
 
-            if inside(self.pos + np.array([1, 1])) and \
-                    ChessBoard.is_p(chess_board, self.pos + np.array([1, 1]), color="black"):
-                    legal_captures.append(self.pos + np.array([1, 1]))
+        # En-passant in both directions
+        for xdir in [-1, 1]:
+            if self.pos[1] == start + 3 * d and inside(self.pos + [xdir, d]):
+                if chess_board.is_p(self.pos + np.array([xdir, 0]), color=ChessBoard.n(self.color), piece=Pawn) and \
+                        chess_board.is_p(self.pos + np.array([xdir, 2 * d]),
+                                         color=ChessBoard.n(self.color), piece=Pawn, b="previous"):
+                    b = copy.deepcopy(chess_board.board)
+                    b[tuple(self.pos + np.array([xdir, d]))] = b[tuple(self.pos)]
+                    b[tuple(self.pos + np.array([xdir, d]))].pos = self.pos + np.array([xdir, d])
+                    b[tuple(self.pos + np.array([xdir, 0]))] = None
+                    b[tuple(self.pos)] = None
+                    boards.append(b)
 
-            if self.pos[1] == 4 and self.pos[0] != 0:       # En passant to the right
-                if ChessBoard.is_p(chess_board, self.pos + np.array([1, 0]), color="black", piece=Pawn) and \
-                        ChessBoard.is_p(chess_board, self.pos + np.array([1, 2]), color="black", piece=Pawn, b="previous"):
-                    legal_captures.append(self.pos + np.array([1, 1]))
-            elif self.pos[1] == 4 and self.pos[0] != 7:       # En passant to the left
-                if ChessBoard.is_p(chess_board, self.pos + np.array([-1, 0]), color="black", piece=Pawn) and \
-                        ChessBoard.is_p(chess_board, self.pos + np.array([-1, 2]), color="black", piece=Pawn, b="previous"):
-                    legal_captures.append(self.pos + np.array([-1, 1]))
-        else:   # self.color == "black"
-            if chess_board.board[tuple(self.pos + np.array([0, -1]))] is None:  # Move straight forward
-                legal_moves.append(self.pos + np.array([0, -1]))
-                if self.pos[1] == 6 and chess_board.board[tuple(self.pos + np.array([0, -2]))] is None:
-                    legal_moves.append(self.pos + np.array([0, -2]))
+        chess_boards = []
+        for b in boards:
+            chess_boards.append(chess_board.make_move(b))
+        return chess_boards
 
-            if inside(self.pos + np.array([-1, -1])) and \
-                    chess_board.board[tuple(self.pos + np.array([-1, -1]))] is not None:  # Capture to the left
-                if chess_board.board[tuple(self.pos + np.array([-1, -1]))].color == "white":
-                    legal_captures.append(self.pos + np.array([-1, -1]))
-
-            if inside(self.pos + np.array([1, -1])) and \
-                    chess_board.board[tuple(self.pos + np.array([1, -1]))] is not None:  # Capture to the right
-                if chess_board.board[tuple(self.pos + np.array([1, -1]))].color == "white":
-                    legal_captures.append(self.pos + np.array([1, -1]))
-            if self.pos[1] == 3 and self.pos[0] != 0:       # En passant to the right
-                if ChessBoard.is_p(chess_board, self.pos + np.array([1, 0]), color="white", piece=Pawn) and \
-                        ChessBoard.is_p(chess_board, self.pos + np.array([1, -2]), color="white", piece=Pawn, b="previous"):
-                    legal_captures.append(self.pos + np.array([1, -1]))
-            elif self.pos[1] == 3 and self.pos[0] != 7:       # En passant to the left
-                if ChessBoard.is_p(chess_board, self.pos + np.array([-1, 0]), color="white", piece=Pawn) and \
-                        ChessBoard.is_p(chess_board, self.pos + np.array([-1, -2]), color="white", piece=Pawn, b="previous"):
-                    legal_captures.append(self.pos + np.array([-1, -1]))
-
-        return legal_moves, legal_captures
 
 
 class Rook(Piece):
@@ -75,56 +98,29 @@ class Rook(Piece):
         self.text = "R"
 
     def legal_moves(self, chess_board):
-        legal_moves = []
-        legal_captures = []
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([n, 0])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([n, 0]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([n, 0]))
-                    break
-            legal_moves.append(self.pos + np.array([n, 0]))
+        boards = []
+        dirs = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1])]
+        for d in dirs:
+            for n in range(1, 7):
+                if not inside(self.pos + n * d):
+                    break   # Only out of the inner loop
 
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([-n, 0])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([-n, 0]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
+                # If the square is empty or has a piece of opposite color
+                if not chess_board.is_p(self.pos + n * d, color=self.color):
+                    b = copy.deepcopy(chess_board.board)
+                    b[tuple(self.pos + n * d)] = b[tuple(self.pos)]
+                    b[tuple(self.pos + n * d)].pos = self.pos + n * d
+                    b[tuple(self.pos)] = None
+                    boards.append(b)
+                    # If it was an one of the opponent's pieces
+                    if chess_board.board[tuple(self.pos + n * d)] is not None:
+                        break
                 else:
-                    legal_captures.append(self.pos + np.array([-n, 0]))
                     break
-            legal_moves.append(self.pos + np.array([-n, 0]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([0, n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([0, n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([0, n]))
-                    break
-            legal_moves.append(self.pos + np.array([0, n]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([0, -n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([0, -n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([0, -n]))
-                    break
-            legal_moves.append(self.pos + np.array([0, -n]))
-        return legal_moves, legal_captures
+        chess_boards = []
+        for b in boards:
+            chess_boards.append(chess_board.make_move(b))
+        return chess_boards
 
 
 class Knight(Piece):
@@ -133,19 +129,21 @@ class Knight(Piece):
         self.text = "Kn"
 
     def legal_moves(self, chess_board):
-        legal_moves = []
-        legal_captures = []
+        boards = []
         moves = [(1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2)]
         for move in moves:
             new_pos = self.pos + np.array(move)
-            if inside(new_pos):
-                spot = chess_board.board[tuple(new_pos)]
-                if spot is None:
-                    legal_moves.append(new_pos)
-                elif spot.color != self.color:
-                    legal_captures.append(new_pos)
+            if inside(new_pos) and not chess_board.is_p(new_pos, color=self.color):
+                b = copy.deepcopy(chess_board.board)
+                b[tuple(new_pos)] = b[tuple(self.pos)]
+                b[tuple(new_pos)].pos = new_pos
+                b[tuple(self.pos)] = None
+                boards.append(b)
 
-        return legal_moves, legal_captures
+        chess_boards = []
+        for b in boards:
+            chess_boards.append(chess_board.make_move(b))
+        return chess_boards
 
 
 class Bishop(Piece):
@@ -154,56 +152,27 @@ class Bishop(Piece):
         self.text = "B"
 
     def legal_moves(self, chess_board):
-        legal_moves = []
-        legal_captures = []
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([n, n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([n, n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
+        boards = []
+        dirs = [np.array([1, 1]), np.array([-1, 1]), np.array([-1, -1]), np.array([1, -1])]
+        for d in dirs:
+            for n in range(1, 7):
+                if not inside(self.pos + n * d):
+                    break   # Only out of the inner loop
+                if not chess_board.is_p(self.pos + n * d, color=self.color):
+                    # If the square is empty or has a piece of opposite color
+                    b = copy.deepcopy(chess_board.board)
+                    b[tuple(self.pos + n * d)] = b[tuple(self.pos)]
+                    b[tuple(self.pos + n * d)].pos = self.pos + n * d
+                    b[tuple(self.pos)] = None
+                    boards.append(b)
+                    if chess_board.board[tuple(self.pos + n * d)] is not None:
+                        break
                 else:
-                    legal_captures.append(self.pos + np.array([n, n]))
                     break
-            legal_moves.append(self.pos + np.array([n, n]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([-n, n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([-n, n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([-n, n]))
-                    break
-            legal_moves.append(self.pos + np.array([-n, n]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([n, -n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([n, -n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([n, -n]))
-                    break
-            legal_moves.append(self.pos + np.array([n, -n]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([-n, -n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([-n, -n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([-n, -n]))
-                    break
-            legal_moves.append(self.pos + np.array([-n, -n]))
-        return legal_moves, legal_captures
+        chess_boards = []
+        for b in boards:
+            chess_boards.append(chess_board.make_move(b))
+        return chess_boards
 
 
 class Queen(Piece):
@@ -212,105 +181,28 @@ class Queen(Piece):
         self.text = "Q"
 
     def legal_moves(self, chess_board):
-        legal_moves = []
-        legal_captures = []
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([n, n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([n, n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
+        boards = []
+        dirs = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1]),
+                np.array([1, 1]), np.array([-1, 1]), np.array([-1, -1]), np.array([1, -1])]
+        for d in dirs:
+            for n in range(1, 7):
+                if not inside(self.pos + n * d):
+                    break   # Only out of the inner loop
+                if not chess_board.is_p(self.pos + n * d, color=self.color):
+                    # If the square is empty or has a piece of opposite color
+                    b = copy.deepcopy(chess_board.board)
+                    b[tuple(self.pos + n * d)] = b[tuple(self.pos)]
+                    b[tuple(self.pos + n * d)].pos = self.pos + n * d
+                    b[tuple(self.pos)] = None
+                    boards.append(b)
+                    if chess_board.board[tuple(self.pos + n * d)] is not None:
+                        break
                 else:
-                    legal_captures.append(self.pos + np.array([n, n]))
                     break
-            legal_moves.append(self.pos + np.array([n, n]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([-n, n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([-n, n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([-n, n]))
-                    break
-            legal_moves.append(self.pos + np.array([-n, n]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([n, -n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([n, -n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([n, -n]))
-                    break
-            legal_moves.append(self.pos + np.array([n, -n]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([-n, -n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([-n, -n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([-n, -n]))
-                    break
-            legal_moves.append(self.pos + np.array([-n, -n]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([n, 0])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([n, 0]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([n, 0]))
-                    break
-            legal_moves.append(self.pos + np.array([n, 0]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([-n, 0])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([-n, 0]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([-n, 0]))
-                    break
-            legal_moves.append(self.pos + np.array([-n, 0]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([0, n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([0, n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([0, n]))
-                    break
-            legal_moves.append(self.pos + np.array([0, n]))
-
-        for n in range(1, 7):
-            if not inside(self.pos + np.array([0, -n])):
-                break
-            spot = chess_board.board[tuple(self.pos + np.array([0, -n]))]
-            if spot is not None:
-                if spot.color == self.color:
-                    break
-                else:
-                    legal_captures.append(self.pos + np.array([0, -n]))
-                    break
-            legal_moves.append(self.pos + np.array([0, -n]))
-        return legal_moves, legal_captures
+        chess_boards = []
+        for b in boards:
+            chess_boards.append(chess_board.make_move(b))
+        return chess_boards
 
 
 class King(Piece):
@@ -319,18 +211,24 @@ class King(Piece):
         self.text = "K"
 
     def legal_moves(self, chess_board):
-        legal_moves = []
-        legal_captures = []
-        for x in [-1, 0, 1]:
-            for y in [-1, 0, 1]:
-                if x != 0 or y != 0:
-                    if inside(self.pos + np.array([x, y])):
-                        spot = chess_board.board[tuple(self.pos + np.array([x, y]))]
-                        if spot is None:
-                            legal_moves.append(self.pos + np.array([x, y]))
-                        elif spot.color != self.color:
-                            legal_captures.append(self.pos + np.array([x, y]))
-        return legal_moves, legal_captures
+        boards = []
+        dirs = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1]),
+                np.array([1, 1]), np.array([-1, 1]), np.array([-1, -1]), np.array([1, -1])]
+        for d in dirs:
+
+            if not inside(self.pos + d):
+                continue    # Only out of the inner loop
+            if not chess_board.is_p(self.pos + d, color=self.color):
+                # If the square is empty or has a piece of opposite color
+                b = copy.deepcopy(chess_board.board)
+                b[tuple(self.pos + d)] = b[tuple(self.pos)]
+                b[tuple(self.pos + d)].pos = self.pos + d
+                b[tuple(self.pos)] = None
+                boards.append(b)
+        chess_boards = []
+        for b in boards:
+            chess_boards.append(chess_board.make_move(b))
+        return chess_boards
 
 
 def inside(pos):
