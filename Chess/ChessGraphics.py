@@ -9,9 +9,9 @@ class ChessGraphics:
         self.grid_s = 100
         self.radius = round(self.grid_s / 8)
         self.board_white = (200, 200, 200)
-        self.board_black = (10, 10, 10)
+        self.board_black = (10, 10, 90)
         self.piece_white = (220, 150, 130)
-        self.piece_black = (20, 20, 10)
+        self.piece_black = (50, 20, 10)
         self.selected_square_color = (20, 120, 20)
         self.legal_move_green = (20, 90, 20)
         self.legal_capture_red = (90, 20, 20)
@@ -63,7 +63,8 @@ class ChessGraphics:
             for b in boards:
                 for x in range(8):
                     for y in range(8):
-                        if (x, y) != self.selected_square and not isinstance(chess_board.board[(x, y)], type(b.board[(x, y)])):
+                        # If a piece has been moved in the square, and it is not the selected one
+                        if (x, y) != self.selected_square and b.board[(x, y)] != chess_board.board[(x, y)]:
                             moves[(x, y)] = b
         return moves
 
@@ -122,7 +123,11 @@ if __name__ == "__main__":
             elif gr.selected_square == gr.board_mouse_pos(bottom_player):
                 gr.selected_square = None
             else:
-                gr.selected_square = gr.board_mouse_pos(bottom_player)
+                # If you are making a move
+                if gr.board_mouse_pos(bottom_player) in move_squares.keys():
+                    b = move_squares[gr.board_mouse_pos(bottom_player)]
 
-            # If one of your own pieces is currently selected
+                # Otherwise just select the square you clicked on
+                else:
+                    gr.selected_square = gr.board_mouse_pos(bottom_player)
 

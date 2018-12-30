@@ -15,6 +15,13 @@ class Piece:
     def __repr__(self):
         return self.text + str(self.pos)
 
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if np.array_equal(other.pos, self.pos) and isinstance(self, type(other)) and other.color == self.color:
+            return True
+        else:
+            return False
 class Pawn(Piece):
     def __init__(self, pos, color):
         super().__init__(pos, color)
@@ -89,7 +96,6 @@ class Pawn(Piece):
         for b in boards:
             chess_boards.append(chess_board.make_move(b))
         return chess_boards
-
 
 
 class Rook(Piece):
