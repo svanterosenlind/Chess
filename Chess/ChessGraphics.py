@@ -61,6 +61,8 @@ class ChessGraphics:
         if chess_board.is_p(np.array(self.selected_square), color=chess_board.player_to_move):
             boards = chess_board.board[self.selected_square].legal_moves(chess_board)
             for b in boards:
+                if not b.is_legal():
+                    continue
                 for x in range(8):
                     for y in range(8):
                         # If a piece has been moved in the square, and it is not the selected one

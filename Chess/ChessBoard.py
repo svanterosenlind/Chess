@@ -1,6 +1,7 @@
 import numpy as np
 import Piece
 
+
 class ChessBoard:
     def __init__(self, board=None, player_to_move="white", previous_board=None):
         if board is None:
@@ -38,7 +39,7 @@ class ChessBoard:
     def make_move(self, board):
         return ChessBoard(board, n(self.player_to_move), self.board)
 
-    def legal(self):
+    def is_legal(self):
         for x in range(8):
             for y in range(8):
                 if self.is_p(np.array([x, y]), color=self.player_to_move):
@@ -54,6 +55,8 @@ class ChessBoard:
                 if self.is_p(np.array([x, y]), color=col, piece=Piece.King):
                     return True
         return False
+
+
 def generate_board():
     board = np.zeros((8, 8), dtype=object)
     for y in range(8):
@@ -97,5 +100,4 @@ def n(col):
         return "white"
     else:
         raise Exception(f"Invalid color. Color was {col}.")
-
 

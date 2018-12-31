@@ -92,10 +92,7 @@ class Pawn(Piece):
                     b[tuple(self.pos)] = None
                     boards.append(b)
 
-        chess_boards = []
-        for b in boards:
-            chess_boards.append(chess_board.make_move(b))
-        return chess_boards
+        return make_boards(boards, chess_board)
 
 
 class Rook(Piece):
@@ -123,10 +120,7 @@ class Rook(Piece):
                         break
                 else:
                     break
-        chess_boards = []
-        for b in boards:
-            chess_boards.append(chess_board.make_move(b))
-        return chess_boards
+        return make_boards(boards, chess_board)
 
 
 class Knight(Piece):
@@ -146,10 +140,7 @@ class Knight(Piece):
                 b[tuple(self.pos)] = None
                 boards.append(b)
 
-        chess_boards = []
-        for b in boards:
-            chess_boards.append(chess_board.make_move(b))
-        return chess_boards
+        return make_boards(boards, chess_board)
 
 
 class Bishop(Piece):
@@ -175,10 +166,7 @@ class Bishop(Piece):
                         break
                 else:
                     break
-        chess_boards = []
-        for b in boards:
-            chess_boards.append(chess_board.make_move(b))
-        return chess_boards
+        return make_boards(boards, chess_board)
 
 
 class Queen(Piece):
@@ -205,10 +193,7 @@ class Queen(Piece):
                         break
                 else:
                     break
-        chess_boards = []
-        for b in boards:
-            chess_boards.append(chess_board.make_move(b))
-        return chess_boards
+        return make_boards(boards, chess_board)
 
 
 class King(Piece):
@@ -231,10 +216,7 @@ class King(Piece):
                 b[tuple(self.pos + d)].pos = self.pos + d
                 b[tuple(self.pos)] = None
                 boards.append(b)
-        chess_boards = []
-        for b in boards:
-            chess_boards.append(chess_board.make_move(b))
-        return chess_boards
+        return make_boards(boards, chess_board)
 
 
 def inside(pos):
@@ -242,3 +224,11 @@ def inside(pos):
         return False
     else:
         return True
+
+
+def make_boards(boards, chess_board):
+    chess_boards = []
+    for b in boards:
+        board = chess_board.make_move(b)
+        chess_boards.append(board)
+    return chess_boards
