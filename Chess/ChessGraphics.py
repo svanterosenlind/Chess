@@ -128,7 +128,12 @@ if __name__ == "__main__":
                 # If you are making a move
                 if gr.board_mouse_pos(bottom_player) in move_squares.keys():
                     b = move_squares[gr.board_mouse_pos(bottom_player)]
-
+                    if not b.has_legal_moves():
+                        if b.is_in_check():
+                            print(f"{ChessBoard.n(b.player_to_move)} wins")
+                        else:
+                            print("Stalemate")
+                        running = False
                 # Otherwise just select the square you clicked on
                 else:
                     gr.selected_square = gr.board_mouse_pos(bottom_player)

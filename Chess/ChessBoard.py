@@ -56,6 +56,24 @@ class ChessBoard:
                     return True
         return False
 
+    def has_legal_moves(self):
+        for x in range(8):
+            for y in range(8):
+                if self.is_p(np.array([x, y]), color=self.player_to_move):
+                    for move in self.board[(x, y)].legal_moves(self):
+                        if move.is_legal():
+                            return True
+        return False
+
+    def is_in_check(self):
+        for x in range(8):
+            for y in range(8):
+                if self.is_p(np.array([x, y]), color=n(self.player_to_move)):
+                    for move in self.board[(x, y)].legal_moves(self):
+                        if not move.has_king(self.player_to_move):
+                            return True
+        return False
+
 
 def generate_board():
     board = np.zeros((8, 8), dtype=object)
