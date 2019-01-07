@@ -1,14 +1,19 @@
 import numpy as np
 import Piece
+import copy
 
 
 class ChessBoard:
-    def __init__(self, board=None, player_to_move="white", previous_board=None):
+    def __init__(self, board=None, player_to_move="white", previous_board=None, last_move=None, move_type=None, move_note=None):
         if board is None:
             board = generate_board()
         self.board = board
         self.player_to_move = player_to_move
         self.previous_board = previous_board      # Used to check for en-passant
+        # Used for graphics and user input
+        self.move_square = last_move
+        self.move_type = move_type
+        self.move_note = move_note
 
     def update(self, board):
         self.previous_board = self.board
@@ -36,8 +41,8 @@ class ChessBoard:
         else:
             return False
 
-    def make_move(self, board):
-        return ChessBoard(board, n(self.player_to_move), self.board)
+    def make_move(self, board, last_move, move_type, note):
+        return ChessBoard(board, n(self.player_to_move), copy.copy(self.board), last_move=last_move, move_type=move_type, move_note=note)
 
     def is_legal(self):
         for x in range(8):

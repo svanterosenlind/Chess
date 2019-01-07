@@ -7,7 +7,6 @@ class Piece:
     def __init__(self, pos, color):
         self.pos = pos
         self.color = color
-        self.text = ""
 
     def legal_moves(self, chess_board):
         pass
@@ -22,10 +21,13 @@ class Piece:
             return True
         else:
             return False
+
+
 class Pawn(Piece):
+    text = "P"
+
     def __init__(self, pos, color):
         super().__init__(pos, color)
-        self.text = "P"
 
     def legal_moves(self, chess_board):
         boards = []
@@ -43,14 +45,14 @@ class Pawn(Piece):
                     b = copy.deepcopy(chess_board.board)
                     b[tuple(self.pos + np.array([0, d]))] = promotion(self.pos + np.array([0, d]), self.color)
                     b[tuple(self.pos)] = None
-                    boards.append(b)
+                    boards.append(chess_board.make_move(b, self.pos + np.array([0, d]), "move", "promotion"))
             # If it won't move to a promotion square
             else:
                 b = copy.deepcopy(chess_board.board)
                 b[tuple(self.pos + np.array([0, d]))] = b[tuple(self.pos)]
                 b[tuple(self.pos + np.array([0, d]))].pos = self.pos + np.array([0, d])
                 b[tuple(self.pos)] = None
-                boards.append(b)
+                boards.append(chess_board.make_move(b, self.pos + np.array([0, d]), "move", None))
 
             # Move two steps forward
             if self.pos[1] == start and not chess_board.is_p(self.pos + np.array([0, 2 * d])):
@@ -58,7 +60,7 @@ class Pawn(Piece):
                 b[tuple(self.pos + np.array([0, 2 * d]))] = b[tuple(self.pos)]
                 b[tuple(self.pos + np.array([0, 2 * d]))].pos = self.pos + np.array([0, 2 * d])
                 b[tuple(self.pos)] = None
-                boards.append(b)
+                boards.append(chess_board.make_move(b, self.pos + np.array([0, 2*d]), "move", None))
 
         # Regular captures in both directions
         for xdir in [-1, 1]:
@@ -70,14 +72,14 @@ class Pawn(Piece):
                         b = copy.deepcopy(chess_board.board)
                         b[tuple(self.pos + np.array([xdir, d]))] = promotion(self.pos + np.array([xdir, d]), self.color)
                         b[tuple(self.pos)] = None
-                        boards.append(b)
+                        boards.append(chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", "promotion"))
                 # If it won't move to a promotion square with its capture
                 else:
                     b = copy.deepcopy(chess_board.board)
                     b[tuple(self.pos + np.array([xdir, d]))] = b[tuple(self.pos)]
                     b[tuple(self.pos + np.array([xdir, d]))].pos = self.pos + np.array([xdir, d])
                     b[tuple(self.pos)] = None
-                    boards.append(b)
+                    boards.append(chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", None))
 
         # En-passant in both directions
         for xdir in [-1, 1]:
@@ -90,15 +92,15 @@ class Pawn(Piece):
                     b[tuple(self.pos + np.array([xdir, d]))].pos = self.pos + np.array([xdir, d])
                     b[tuple(self.pos + np.array([xdir, 0]))] = None
                     b[tuple(self.pos)] = None
-                    boards.append(b)
-
-        return make_boards(boards, chess_board)
+                    boards.append(chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", None))
+        return boards
 
 
 class Rook(Piece):
+    text = "R"
+
     def __init__(self, pos, color):
         super().__init__(pos, color)
-        self.text = "R"
 
     def legal_moves(self, chess_board):
         boards = []
@@ -114,19 +116,23 @@ class Rook(Piece):
                     b[tuple(self.pos + n * d)] = b[tuple(self.pos)]
                     b[tuple(self.pos + n * d)].pos = self.pos + n * d
                     b[tuple(self.pos)] = None
-                    boards.append(b)
+
                     # If it was an one of the opponent's pieces
                     if chess_board.board[tuple(self.pos + n * d)] is not None:
+                        boards.append(chess_board.make_move(b, self.pos + n * d, "capture", None))
                         break
+                    else:
+                        boards.append(chess_board.make_move(b, self.pos + n * d, "move", None))
                 else:
                     break
-        return make_boards(boards, chess_board)
+        return boards
 
 
 class Knight(Piece):
+    text = "Kn"
+
     def __init__(self, pos, color):
         super().__init__(pos, color)
-        self.text = "Kn"
 
     def legal_moves(self, chess_board):
         boards = []
@@ -138,15 +144,21 @@ class Knight(Piece):
                 b[tuple(new_pos)] = b[tuple(self.pos)]
                 b[tuple(new_pos)].pos = new_pos
                 b[tuple(self.pos)] = None
-                boards.append(b)
+                # It is a capture
+                if chess_board.is_p(new_pos, color=ChessBoard.n(self.color)):
+                    boards.append(chess_board.make_move(b, new_pos, "capture", None))
+                # Just a regular old move
+                else:
+                    boards.append(chess_board.make_move(b, new_pos, "move", None))
 
-        return make_boards(boards, chess_board)
+        return boards
 
 
 class Bishop(Piece):
+    text = "B"
+
     def __init__(self, pos, color):
         super().__init__(pos, color)
-        self.text = "B"
 
     def legal_moves(self, chess_board):
         boards = []
@@ -154,25 +166,29 @@ class Bishop(Piece):
         for d in dirs:
             for n in range(1, 7):
                 if not inside(self.pos + n * d):
-                    break   # Only out of the inner loop
+                    break
+                # If the square is empty or has a piece of opposite color
                 if not chess_board.is_p(self.pos + n * d, color=self.color):
-                    # If the square is empty or has a piece of opposite color
                     b = copy.deepcopy(chess_board.board)
                     b[tuple(self.pos + n * d)] = b[tuple(self.pos)]
                     b[tuple(self.pos + n * d)].pos = self.pos + n * d
                     b[tuple(self.pos)] = None
-                    boards.append(b)
+                    # If it was a capture
                     if chess_board.board[tuple(self.pos + n * d)] is not None:
+                        boards.append(chess_board.make_move(b, self.pos + n * d, "capture", None))
                         break
+                    else:
+                        boards.append(chess_board.make_move(b, self.pos + n * d, "move", None))
                 else:
                     break
-        return make_boards(boards, chess_board)
+        return boards
 
 
 class Queen(Piece):
+    text = "Q"
+
     def __init__(self, pos, color):
         super().__init__(pos, color)
-        self.text = "Q"
 
     def legal_moves(self, chess_board):
         boards = []
@@ -180,26 +196,31 @@ class Queen(Piece):
                 np.array([1, 1]), np.array([-1, 1]), np.array([-1, -1]), np.array([1, -1])]
         for d in dirs:
             for n in range(1, 7):
-                if not inside(self.pos + n * d):
+                new_pos = self.pos + n * d
+                if not inside(new_pos):
                     break   # Only out of the inner loop
-                if not chess_board.is_p(self.pos + n * d, color=self.color):
+                if not chess_board.is_p(new_pos, color=self.color):
                     # If the square is empty or has a piece of opposite color
                     b = copy.deepcopy(chess_board.board)
-                    b[tuple(self.pos + n * d)] = b[tuple(self.pos)]
-                    b[tuple(self.pos + n * d)].pos = self.pos + n * d
+                    b[tuple(new_pos)] = b[tuple(self.pos)]
+                    b[tuple(new_pos)].pos = new_pos
                     b[tuple(self.pos)] = None
-                    boards.append(b)
-                    if chess_board.board[tuple(self.pos + n * d)] is not None:
+                    # If it was a capture
+                    if chess_board.board[tuple(new_pos)] is not None:
+                        boards.append(chess_board.make_move(b, new_pos, "capture", None))
                         break
+                    else:
+                        boards.append(chess_board.make_move(b, new_pos, "move", None))
                 else:
                     break
-        return make_boards(boards, chess_board)
+        return boards
 
 
 class King(Piece):
+    text = "K"
+
     def __init__(self, pos, color):
         super().__init__(pos, color)
-        self.text = "K"
 
     def legal_moves(self, chess_board):
         boards = []
@@ -215,8 +236,13 @@ class King(Piece):
                 b[tuple(self.pos + d)] = b[tuple(self.pos)]
                 b[tuple(self.pos + d)].pos = self.pos + d
                 b[tuple(self.pos)] = None
-                boards.append(b)
-        return make_boards(boards, chess_board)
+                # If it was a capture
+                if chess_board.board[tuple(self.pos + d)] is not None:
+                    boards.append(chess_board.make_move(b, self.pos + d, "capture", None))
+                    break
+                else:
+                    boards.append(chess_board.make_move(b, self.pos + d, "move", None))
+        return boards
 
 
 def inside(pos):
@@ -229,6 +255,10 @@ def inside(pos):
 def make_boards(boards, chess_board):
     chess_boards = []
     for b in boards:
-        board = chess_board.make_move(b)
+        board = b[0]
+        last_move = b[1]
+        move_type = b[2]
+        note = b[3]
+        board = chess_board.make_move(board, last_move, move_type, note)
         chess_boards.append(board)
     return chess_boards
