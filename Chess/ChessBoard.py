@@ -79,6 +79,11 @@ class ChessBoard:
                             return True
         return False
 
+    def make_promotion_move(self, piece):
+        b = copy.deepcopy(self.board)
+        b[tuple(self.move_square)] = piece(self.move_square, n(self.player_to_move))
+        return ChessBoard(b, self.player_to_move, copy.copy(self.board), last_move=self.move_square,
+                          move_type=self.move_type, move_note=self.move_note)
 
 def generate_board():
     board = np.zeros((8, 8), dtype=object)

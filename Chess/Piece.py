@@ -41,11 +41,10 @@ class Pawn(Piece):
         if inside(self.pos + np.array([0, d])) and not chess_board.is_p(self.pos + np.array([0, d])):
             # If it will move to a promotion square
             if not inside(self.pos + np.array([0, 2 * d])):
-                for promotion in [Knight, Bishop, Rook, Queen]:
-                    b = copy.deepcopy(chess_board.board)
-                    b[tuple(self.pos + np.array([0, d]))] = promotion(self.pos + np.array([0, d]), self.color)
-                    b[tuple(self.pos)] = None
-                    boards.append(chess_board.make_move(b, self.pos + np.array([0, d]), "move", "promotion"))
+                b = copy.deepcopy(chess_board.board)
+                b[tuple(self.pos + np.array([0, d]))] = b[tuple(self.pos)]
+                b[tuple(self.pos)] = None
+                boards.append(chess_board.make_move(b, self.pos + np.array([0, d]), "move", "promotion"))
             # If it won't move to a promotion square
             else:
                 b = copy.deepcopy(chess_board.board)
@@ -68,11 +67,10 @@ class Pawn(Piece):
                     chess_board.is_p(self.pos + np.array([xdir, d]), color=ChessBoard.n(self.color)):
                 # If it will move to a promotion square with the capture
                 if not inside(self.pos + np.array([0, 2 * d])):
-                    for promotion in [Knight, Bishop, Rook, Queen]:
-                        b = copy.deepcopy(chess_board.board)
-                        b[tuple(self.pos + np.array([xdir, d]))] = promotion(self.pos + np.array([xdir, d]), self.color)
-                        b[tuple(self.pos)] = None
-                        boards.append(chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", "promotion"))
+                    b = copy.deepcopy(chess_board.board)
+                    b[tuple(self.pos + np.array([xdir, d]))] = b[tuple(self.pos)]
+                    b[tuple(self.pos)] = None
+                    boards.append(chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", "promotion"))
                 # If it won't move to a promotion square with its capture
                 else:
                     b = copy.deepcopy(chess_board.board)
@@ -251,14 +249,3 @@ def inside(pos):
     else:
         return True
 
-
-def make_boards(boards, chess_board):
-    chess_boards = []
-    for b in boards:
-        board = b[0]
-        last_move = b[1]
-        move_type = b[2]
-        note = b[3]
-        board = chess_board.make_move(board, last_move, move_type, note)
-        chess_boards.append(board)
-    return chess_boards
