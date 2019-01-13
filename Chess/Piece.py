@@ -29,7 +29,7 @@ class Pawn(Piece):
     def __init__(self, pos, color):
         super().__init__(pos, color)
 
-    def legal_moves(self, chess_board):
+    def legal_moves(self, chess_board, legal=True):
         boards = []
         if self.color == "white":
             d = 1
@@ -44,14 +44,25 @@ class Pawn(Piece):
                 b = copy.deepcopy(chess_board.board)
                 b[tuple(self.pos + np.array([0, d]))] = b[tuple(self.pos)]
                 b[tuple(self.pos)] = None
-                boards.append(chess_board.make_move(b, self.pos + np.array([0, d]), "move", "promotion"))
+                new_board = chess_board.make_move(b, self.pos + np.array([0, d]), "move", "promotion")
+                new_board.player_to_move = ChessBoard.n(new_board.player_to_move)
+                if legal:
+                    if new_board.is_legal():
+                        boards.append(new_board)
+                else:
+                    boards.append(new_board)
             # If it won't move to a promotion square
             else:
                 b = copy.deepcopy(chess_board.board)
                 b[tuple(self.pos + np.array([0, d]))] = b[tuple(self.pos)]
                 b[tuple(self.pos + np.array([0, d]))].pos = self.pos + np.array([0, d])
                 b[tuple(self.pos)] = None
-                boards.append(chess_board.make_move(b, self.pos + np.array([0, d]), "move", None))
+                new_board = chess_board.make_move(b, self.pos + np.array([0, d]), "move", None)
+                if legal:
+                    if new_board.is_legal():
+                        boards.append(new_board)
+                else:
+                    boards.append(new_board)
 
             # Move two steps forward
             if self.pos[1] == start and not chess_board.is_p(self.pos + np.array([0, 2 * d])):
@@ -59,7 +70,12 @@ class Pawn(Piece):
                 b[tuple(self.pos + np.array([0, 2 * d]))] = b[tuple(self.pos)]
                 b[tuple(self.pos + np.array([0, 2 * d]))].pos = self.pos + np.array([0, 2 * d])
                 b[tuple(self.pos)] = None
-                boards.append(chess_board.make_move(b, self.pos + np.array([0, 2*d]), "move", None))
+                new_board = chess_board.make_move(b, self.pos + np.array([0, 2*d]), "move", None)
+                if legal:
+                    if new_board.is_legal():
+                        boards.append(new_board)
+                else:
+                    boards.append(new_board)
 
         # Regular captures in both directions
         for xdir in [-1, 1]:
@@ -70,14 +86,25 @@ class Pawn(Piece):
                     b = copy.deepcopy(chess_board.board)
                     b[tuple(self.pos + np.array([xdir, d]))] = b[tuple(self.pos)]
                     b[tuple(self.pos)] = None
-                    boards.append(chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", "promotion"))
+                    new_board = chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", "promotion")
+                    new_board.player_to_move = ChessBoard.n(new_board.player_to_move)
+                    if legal:
+                        if new_board.is_legal():
+                            boards.append(new_board)
+                    else:
+                        boards.append(new_board)
                 # If it won't move to a promotion square with its capture
                 else:
                     b = copy.deepcopy(chess_board.board)
                     b[tuple(self.pos + np.array([xdir, d]))] = b[tuple(self.pos)]
                     b[tuple(self.pos + np.array([xdir, d]))].pos = self.pos + np.array([xdir, d])
                     b[tuple(self.pos)] = None
-                    boards.append(chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", None))
+                    new_board = chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", None)
+                    if legal:
+                        if new_board.is_legal():
+                            boards.append(new_board)
+                    else:
+                        boards.append(new_board)
 
         # En-passant in both directions
         for xdir in [-1, 1]:
@@ -90,7 +117,12 @@ class Pawn(Piece):
                     b[tuple(self.pos + np.array([xdir, d]))].pos = self.pos + np.array([xdir, d])
                     b[tuple(self.pos + np.array([xdir, 0]))] = None
                     b[tuple(self.pos)] = None
-                    boards.append(chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", None))
+                    new_board = chess_board.make_move(b, self.pos + np.array([xdir, d]), "capture", None)
+                    if legal:
+                        if new_board.is_legal():
+                            boards.append(new_board)
+                    else:
+                        boards.append(new_board)
         return boards
 
 
@@ -100,7 +132,7 @@ class Rook(Piece):
     def __init__(self, pos, color):
         super().__init__(pos, color)
 
-    def legal_moves(self, chess_board):
+    def legal_moves(self, chess_board, legal=True):
         boards = []
         dirs = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1])]
         for d in dirs:
@@ -117,10 +149,20 @@ class Rook(Piece):
 
                     # If it was an one of the opponent's pieces
                     if chess_board.board[tuple(self.pos + n * d)] is not None:
-                        boards.append(chess_board.make_move(b, self.pos + n * d, "capture", None))
+                        new_board = chess_board.make_move(b, self.pos + n * d, "capture", None)
+                        if legal:
+                            if new_board.is_legal():
+                                boards.append(new_board)
+                        else:
+                            boards.append(new_board)
                         break
                     else:
-                        boards.append(chess_board.make_move(b, self.pos + n * d, "move", None))
+                        new_board = chess_board.make_move(b, self.pos + n * d, "move", None)
+                        if legal:
+                            if new_board.is_legal():
+                                boards.append(new_board)
+                        else:
+                            boards.append(new_board)
                 else:
                     break
         return boards
@@ -132,7 +174,7 @@ class Knight(Piece):
     def __init__(self, pos, color):
         super().__init__(pos, color)
 
-    def legal_moves(self, chess_board):
+    def legal_moves(self, chess_board, legal=True):
         boards = []
         moves = [(1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2)]
         for move in moves:
@@ -144,11 +186,16 @@ class Knight(Piece):
                 b[tuple(self.pos)] = None
                 # It is a capture
                 if chess_board.is_p(new_pos, color=ChessBoard.n(self.color)):
-                    boards.append(chess_board.make_move(b, new_pos, "capture", None))
+                    move_type = "capture"
                 # Just a regular old move
                 else:
-                    boards.append(chess_board.make_move(b, new_pos, "move", None))
-
+                    move_type = "move"
+                new_board = chess_board.make_move(b, new_pos, move_type, None)
+                if legal:
+                    if new_board.is_legal():
+                        boards.append(new_board)
+                else:
+                    boards.append(new_board)
         return boards
 
 
@@ -158,7 +205,7 @@ class Bishop(Piece):
     def __init__(self, pos, color):
         super().__init__(pos, color)
 
-    def legal_moves(self, chess_board):
+    def legal_moves(self, chess_board, legal=True):
         boards = []
         dirs = [np.array([1, 1]), np.array([-1, 1]), np.array([-1, -1]), np.array([1, -1])]
         for d in dirs:
@@ -173,10 +220,20 @@ class Bishop(Piece):
                     b[tuple(self.pos)] = None
                     # If it was a capture
                     if chess_board.board[tuple(self.pos + n * d)] is not None:
-                        boards.append(chess_board.make_move(b, self.pos + n * d, "capture", None))
+                        new_board = chess_board.make_move(b, self.pos + n * d, "capture", None)
+                        if legal:
+                            if new_board.is_legal():
+                                boards.append(new_board)
+                        else:
+                            boards.append(new_board)
                         break
                     else:
-                        boards.append(chess_board.make_move(b, self.pos + n * d, "move", None))
+                        new_board = chess_board.make_move(b, self.pos + n * d, "move", None)
+                        if legal:
+                            if new_board.is_legal():
+                                boards.append(new_board)
+                        else:
+                            boards.append(new_board)
                 else:
                     break
         return boards
@@ -188,7 +245,7 @@ class Queen(Piece):
     def __init__(self, pos, color):
         super().__init__(pos, color)
 
-    def legal_moves(self, chess_board):
+    def legal_moves(self, chess_board, legal=True):
         boards = []
         dirs = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1]),
                 np.array([1, 1]), np.array([-1, 1]), np.array([-1, -1]), np.array([1, -1])]
@@ -205,10 +262,20 @@ class Queen(Piece):
                     b[tuple(self.pos)] = None
                     # If it was a capture
                     if chess_board.board[tuple(new_pos)] is not None:
-                        boards.append(chess_board.make_move(b, new_pos, "capture", None))
+                        new_board = chess_board.make_move(b, new_pos, "capture", None)
+                        if legal:
+                            if new_board.is_legal():
+                                boards.append(new_board)
+                        else:
+                            boards.append(new_board)
                         break
                     else:
-                        boards.append(chess_board.make_move(b, new_pos, "move", None))
+                        new_board = chess_board.make_move(b, new_pos, "move", None)
+                        if legal:
+                            if new_board.is_legal():
+                                boards.append(new_board)
+                        else:
+                            boards.append(new_board)
                 else:
                     break
         return boards
@@ -220,14 +287,14 @@ class King(Piece):
     def __init__(self, pos, color):
         super().__init__(pos, color)
 
-    def legal_moves(self, chess_board):
+    def legal_moves(self, chess_board, legal=True):
         boards = []
         dirs = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1]),
                 np.array([1, 1]), np.array([-1, 1]), np.array([-1, -1]), np.array([1, -1])]
         for d in dirs:
 
             if not inside(self.pos + d):
-                continue    # Only out of the inner loop
+                continue
             if not chess_board.is_p(self.pos + d, color=self.color):
                 # If the square is empty or has a piece of opposite color
                 b = copy.deepcopy(chess_board.board)
@@ -236,10 +303,20 @@ class King(Piece):
                 b[tuple(self.pos)] = None
                 # If it was a capture
                 if chess_board.board[tuple(self.pos + d)] is not None:
-                    boards.append(chess_board.make_move(b, self.pos + d, "capture", None))
+                    new_board = chess_board.make_move(b, self.pos + d, "capture", None)
+                    if legal:
+                        if new_board.is_legal():
+                            boards.append(new_board)
+                    else:
+                        boards.append(new_board)
                     break
                 else:
-                    boards.append(chess_board.make_move(b, self.pos + d, "move", None))
+                    new_board = chess_board.make_move(b, self.pos + d, "move", None)
+                    if legal:
+                        if new_board.is_legal():
+                            boards.append(new_board)
+                    else:
+                        boards.append(new_board)
         return boards
 
 

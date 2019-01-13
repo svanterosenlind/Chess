@@ -123,6 +123,7 @@ if __name__ == "__main__":
     b = ChessBoard.ChessBoard()
     bottom_player = "white"
     running = True
+    moved = False
     while running:
         pressed = False
         for event in pygame.event.get():
@@ -143,6 +144,7 @@ if __name__ == "__main__":
                 if piece is not None:
                     b = b.make_promotion_move(piece)
                     gr.promoting = False
+                    moved = True
             else:
                 mouse_square = gr.board_mouse_pos(bottom_player)
                 # If you hadn't selected a square yet, select the one you clicked
@@ -158,17 +160,19 @@ if __name__ == "__main__":
                     for move in possible_moves:
                         if np.array_equal(move.move_square, mouse_square):
                             b = move
+                            moved = True
                             if b.move_note == "promotion":
                                 gr.promoting = True
-                            # Check to see if this move ends the game
-                            if not b.has_legal_moves():
-                                if b.is_in_check():
-                                    print(f"{ChessBoard.n(b.player_to_move)} wins")
-                                else:
-                                    print("Stalemate")
-                                running = False
+                                moved = False
                             break
                     # Otherwise just select the square you clicked on
                     else:
                         gr.selected_square = mouse_square
+            # Check to see if this move ends the game
+            if not b.has_legal_moves():
+                if b.is_in_check():
+                    print(f"{ChessBoard.n(b.player_to_move)} wins")
+                else:
+                    print("Stalemate")
+                # running = False
 

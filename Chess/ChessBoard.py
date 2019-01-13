@@ -15,13 +15,7 @@ class ChessBoard:
         self.move_type = move_type
         self.move_note = move_note
 
-    def update(self, board):
-        self.previous_board = self.board
-        self.board = board
-        self.player_to_move = n(self.player_to_move)
-
-        # Check if there is a piece at pos with the given attributes
-
+    # Check if there is a piece at pos with the given attributes
     def is_p(self, pos, color=None, piece=None, b="current"):
         if b == "current":
             b = self.board
@@ -44,11 +38,12 @@ class ChessBoard:
     def make_move(self, board, last_move, move_type, note):
         return ChessBoard(board, n(self.player_to_move), copy.copy(self.board), last_move=last_move, move_type=move_type, move_note=note)
 
+    # Checks if the current position is legal
     def is_legal(self):
         for x in range(8):
             for y in range(8):
                 if self.is_p(np.array([x, y]), color=self.player_to_move):
-                    for move in self.board[(x, y)].legal_moves(self):
+                    for move in self.board[(x, y)].legal_moves(self, legal=False):
                         if not move.has_king(n(self.player_to_move)):
                             return False
         return True
@@ -61,29 +56,38 @@ class ChessBoard:
                     return True
         return False
 
-    def has_legal_moves(self):
+    def all_legal_moves(self):
+        boards = []
         for x in range(8):
             for y in range(8):
                 if self.is_p(np.array([x, y]), color=self.player_to_move):
                     for move in self.board[(x, y)].legal_moves(self):
-                        if move.is_legal():
-                            return True
-        return False
+                        if move.move_note == "promotion":
+                            for prom in [Piece.Rook, Piece.Knight, Piece.Bishop, Piece.Queen]:
+                                boards.append(move.make_promotion_move(prom))
+                        else:
+                            boards.append(move)
+        return boards
+
+    def has_legal_moves(self):
+        return len(self.all_legal_moves()) != 0
 
     def is_in_check(self):
         for x in range(8):
             for y in range(8):
                 if self.is_p(np.array([x, y]), color=n(self.player_to_move)):
-                    for move in self.board[(x, y)].legal_moves(self):
-                        if not move.has_king(self.player_to_move):
+                    for move in self.board[(x, y)].legal_moves(self, legal=False):
+                        if self.is_p(move.move_square, color=self.player_to_move, piece=Piece.King) \
+                                and move.move_type == "capture":
                             return True
         return False
 
     def make_promotion_move(self, piece):
         b = copy.deepcopy(self.board)
         b[tuple(self.move_square)] = piece(self.move_square, n(self.player_to_move))
-        return ChessBoard(b, self.player_to_move, copy.copy(self.board), last_move=self.move_square,
+        return ChessBoard(b, n(self.player_to_move), copy.copy(self.board), last_move=self.move_square,
                           move_type=self.move_type, move_note=self.move_note)
+
 
 def generate_board():
     board = np.zeros((8, 8), dtype=object)
