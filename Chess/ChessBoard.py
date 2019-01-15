@@ -98,7 +98,7 @@ def generate_board():
     for y in range(8):
         for x in range(8):
             pos = (x, y)
-            """if y == 0:
+            if y == 0:
                 if x == 0 or x == 7:
                     board[pos] = Piece.Rook(np.array(pos), "white")
                 elif x == 1 or x == 6:
@@ -123,13 +123,7 @@ def generate_board():
                 elif x == 3:
                     board[pos] = Piece.Queen(np.array(pos), n("white"))
                 elif x == 4:
-                    board[pos] = Piece.King(np.array(pos), n("white"))"""
-            if pos ==(3,3):
-                board[pos] = Piece.King(np.array(pos), "white")
-            elif pos == (3, 5):
-                board[pos] = Piece.Pawn(np.array(pos), "black")
-            elif pos == (0,0):
-                board[pos] = Piece.King(np.array(pos), "black")
+                    board[pos] = Piece.King(np.array(pos), n("white"))
             else:
                 board[pos] = None
     return board
