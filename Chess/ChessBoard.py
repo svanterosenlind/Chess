@@ -42,9 +42,13 @@ class ChessBoard:
     def is_legal(self):
         for x in range(8):
             for y in range(8):
+                # Check if it is a piece you control
                 if self.is_p(np.array([x, y]), color=self.player_to_move):
+                    # For each possible move it could make
                     for move in self.board[(x, y)].legal_moves(self, legal=False):
-                        if not move.has_king(n(self.player_to_move)):
+                        # Is it a capture on the square currently occupied by the enemy king
+                        if self.is_p(move.move_square, color=n(self.player_to_move), piece=Piece.King) \
+                                and move.move_type == "capture":
                             return False
         return True
 
@@ -94,7 +98,7 @@ def generate_board():
     for y in range(8):
         for x in range(8):
             pos = (x, y)
-            if y == 0:
+            """if y == 0:
                 if x == 0 or x == 7:
                     board[pos] = Piece.Rook(np.array(pos), "white")
                 elif x == 1 or x == 6:
@@ -119,7 +123,13 @@ def generate_board():
                 elif x == 3:
                     board[pos] = Piece.Queen(np.array(pos), n("white"))
                 elif x == 4:
-                    board[pos] = Piece.King(np.array(pos), n("white"))
+                    board[pos] = Piece.King(np.array(pos), n("white"))"""
+            if pos ==(3,3):
+                board[pos] = Piece.King(np.array(pos), "white")
+            elif pos == (3, 5):
+                board[pos] = Piece.Pawn(np.array(pos), "black")
+            elif pos == (0,0):
+                board[pos] = Piece.King(np.array(pos), "black")
             else:
                 board[pos] = None
     return board

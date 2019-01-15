@@ -309,7 +309,6 @@ class King(Piece):
                             boards.append(new_board)
                     else:
                         boards.append(new_board)
-                    break
                 else:
                     new_board = chess_board.make_move(b, self.pos + d, "move", None)
                     if legal:
